@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klasik Türk Tavlası</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- SVG Gradients Definition -->
+    <svg width="0" height="0" style="position: absolute;">
+        <defs>
+            <!-- Koyu Renk Üçgen (Maun Ahşap) -->
+            <linearGradient id="triangleDarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#91331e" />
+                <stop offset="50%" stop-color="#692212" />
+                <stop offset="100%" stop-color="#4d160b" />
+            </linearGradient>
+
+            <!-- Açık Renk Üçgen (Fildişi / Sedef Ahşap) -->
+            <linearGradient id="triangleLightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#faebd7" />
+                <stop offset="50%" stop-color="#dfc8a5" />
+                <stop offset="100%" stop-color="#cbb18a" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <!-- Üst Menü & Kontroller -->
+    <header class="game-header">
+        <div class="brand-section">
+            <span class="brand-logo">🎲</span>
+            <div>
+                <h1 class="brand-title">Tavla-ı Âlâ</h1>
+                <div class="brand-subtitle">Geleneksel Türk Tavlası</div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button id="btnRollDice" class="btn btn-primary btn-dice">
+                <span>🎲</span> Zar At
+            </button>
+            <button id="btnUndo" class="btn" title="Son hamleyi geri al">
+                <span>↩</span> Geri Al
+            </button>
+            <button id="btnNewGame" class="btn">
+                <span>⚙</span> Yeni Oyun
+            </button>
+            <button id="btnToggleHistory" class="btn">
+                <span>📜</span> Hamleler
+            </button>
+            <button id="btnSound" class="btn" title="Sesi Aç/Kapat">
+                <span id="soundIcon">🔊</span>
+            </button>
+            <button id="btnRules" class="btn">
+                <span>❓</span> Kurallar
+            </button>
+        </div>
+    </header>
+
+    <!-- Oyun Alanı -->
+    <main class="game-container">
+        <!-- Skor Tablosu -->
+        <section class="scoreboard">
+            <!-- Beyaz Oyuncu (Siz) -->
+            <div id="playerCardWhite" class="player-card active">
+                <div class="player-avatar white">⚪</div>
+                <div class="player-info">
+                    <div class="player-name">
+                        <span id="nameWhite">Beyaz (Siz)</span>
+                    </div>
+                    <div class="player-meta">
+                        <span>Kalan Yol: <strong id="pipWhite" class="pip-badge">167</strong></span>
+                        <span>Toplanan: <strong id="offWhiteCount">0</strong>/15</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Maç Skoru -->
+            <div class="match-score-center">
+                <div class="score-display">
+                    <span id="scoreWhite">0</span> - <span id="scoreBlack">0</span>
+                </div>
+                <div id="targetScoreDisplay" class="match-target">Hedef: 5 Puan</div>
+            </div>
+
+            <!-- Siyah Oyuncu (AI / Rakip) -->
+            <div id="playerCardBlack" class="player-card">
+                <div class="player-info" style="text-align: right;">
+                    <div class="player-name" style="justify-content: flex-end;">
+                        <span id="nameBlack">Siyah (Bilgisayar)</span>
+                    </div>
+                    <div class="player-meta" style="justify-content: flex-end;">
+                        <span>Toplanan: <strong id="offBlackCount">0</strong>/15</span>
+                        <span>Kalan Yol: <strong id="pipBlack" class="pip-badge">167</strong></span>
+                    </div>
+                </div>
+                <div class="player-avatar black">⚫</div>
+            </div>
+        </section>
+
+        <!-- Geleneksel Zar İlanı (Şeş Beş, Dü Şeş vb.) -->
+        <div class="dice-callout-banner">
+            <div id="diceCallout" class="dice-callout-text" style="display: none;">
+                Şeş Beş (6 - 5)
+            </div>
+        </div>
+
+        <!-- Ahşap Tavla Tahtası -->
+        <div class="board-wrapper" id="tavlaBoard">
+            <!-- Sol Yarı (Dış Tahta / Outfield) -->
+            <div class="board-half board-left">
+                <!-- Üst Noktalar (13 - 18) -->
+                <div class="points-row points-top">
+                    <div class="point-column" data-point="13"></div>
+                    <div class="point-column" data-point="14"></div>
+                    <div class="point-column" data-point="15"></div>
+                    <div class="point-column" data-point="16"></div>
+                    <div class="point-column" data-point="17"></div>
+                    <div class="point-column" data-point="18"></div>
+                </div>
+
+                <!-- Sol Orta Zar Alanı -->
+                <div class="board-mid-area">
+                    <div id="diceTrayLeft" class="dice-tray dice-tray-left" style="display: none;"></div>
+                </div>
+
+                <!-- Alt Noktalar (12 - 7) -->
+                <div class="points-row points-bottom">
+                    <div class="point-column" data-point="12"></div>
+                    <div class="point-column" data-point="11"></div>
+                    <div class="point-column" data-point="10"></div>
+                    <div class="point-column" data-point="9"></div>
+                    <div class="point-column" data-point="8"></div>
+                    <div class="point-column" data-point="7"></div>
+                </div>
+            </div>
+
+            <!-- Orta Bölme (Bar / Kırık Taş Bölmesi) -->
+            <div class="board-bar">
+                <!-- Üst Menteşe -->
+                <div class="bar-hinge"></div>
+
+                <!-- Beyaz Kırık Taşlar (Bardan 19-24'e girer) -->
+                <div id="barWhite" class="bar-checkers-zone" title="Beyazın Kırık Taşları">
+                    <span class="bar-label">BAR</span>
+                </div>
+
+                <!-- Orta Menteşe -->
+                <div class="bar-hinge"></div>
+
+                <!-- Siyah Kırık Taşlar (Bardan 1-6'ya girer) -->
+                <div id="barBlack" class="bar-checkers-zone" title="Siyahın Kırık Taşları">
+                    <span class="bar-label">BAR</span>
+                </div>
+
+                <!-- Alt Menteşe -->
+                <div class="bar-hinge"></div>
+            </div>
+
+            <!-- Sağ Yarı (Ev / Homefield) -->
+            <div class="board-half board-right">
+                <!-- Üst Noktalar (19 - 24) -->
+                <div class="points-row points-top">
+                    <div class="point-column" data-point="19"></div>
+                    <div class="point-column" data-point="20"></div>
+                    <div class="point-column" data-point="21"></div>
+                    <div class="point-column" data-point="22"></div>
+                    <div class="point-column" data-point="23"></div>
+                    <div class="point-column" data-point="24"></div>
+                </div>
+
+                <!-- Sağ Orta Zar Alanı -->
+                <div class="board-mid-area">
+                    <div id="diceTrayRight" class="dice-tray dice-tray-right"></div>
+                </div>
+
+                <!-- Alt Noktalar (6 - 1) -->
+                <div class="points-row points-bottom">
+                    <div class="point-column" data-point="6"></div>
+                    <div class="point-column" data-point="5"></div>
+                    <div class="point-column" data-point="4"></div>
+                    <div class="point-column" data-point="3"></div>
+                    <div class="point-column" data-point="2"></div>
+                    <div class="point-column" data-point="1"></div>
+                </div>
+            </div>
+
+            <!-- Sağ Yan Toplama Bölmeleri (Bear-off trays) -->
+            <div class="bear-off-tray">
+                <!-- Siyah Toplama Bölmesi (Üstte) -->
+                <div id="trayBlack" class="tray-section" data-player="black" title="Siyah Toplanan Taşlar">
+                    <span class="tray-label">SİYAH</span>
+                </div>
+
+                <!-- Beyaz Toplama Bölmesi (Altta) -->
+                <div id="trayWhite" class="tray-section" data-player="white" title="Beyaz Toplanan Taşlar">
+                    <span class="tray-label">BEYAZ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alt Bilgi / Durum Çubuğu -->
+        <div class="bottom-controls">
+            <div id="statusMessage" class="status-message">
+                Zar atarak oyuna başlayın!
+            </div>
+        </div>
+    </main>
+
+    <!-- Hamle Geçmişi Çekmecesi -->
+    <aside id="historyDrawer" class="history-drawer">
+        <div class="history-header">
+            <span>📜 Hamle Günlüğü</span>
+            <button id="btnCloseHistory" class="modal-close">&times;</button>
+        </div>
+        <div id="historyList" class="history-list">
+            <div class="history-item">Oyun hazırlandı.</div>
+        </div>
+    </aside>
+
+    <!-- Yeni Oyun Modalı -->
+    <div id="modalNewGame" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>⚙ Yeni Oyun Ayarları</span>
+                <button class="modal-close" data-close-modal>&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Oyun Modu</label>
+                <div class="radio-group">
+                    <div class="radio-card selected" data-mode="ai">
+                        <div style="font-size: 24px; margin-bottom: 4px;">🤖</div>
+                        <strong>Yapay Zeka</strong>
+                        <div style="font-size: 11px; color: #a8917e;">Bilgisayara Karşı</div>
+                    </div>
+                    <div class="radio-card" data-mode="pvp">
+                        <div style="font-size: 24px; margin-bottom: 4px;">👥</div>
+                        <strong>2 Kişilik</strong>
+                        <div style="font-size: 11px; color: #a8917e;">Aynı Cihazda</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="aiDifficultyGroup" class="form-group">
+                <label class="form-label">Bilgisayar Zorluğu</label>
+                <select id="selectDifficulty" class="form-select">
+                    <option value="easy">Acemi (Kolay)</option>
+                    <option value="medium" selected>Orta (Tavla Sever)</option>
+                    <option value="hard">Usta (Tavla Piri)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Maç Hedef Puanı</label>
+                <select id="selectTargetScore" class="form-select">
+                    <option value="1">Tek El (1 Puan)</option>
+                    <option value="3">3 Puana Ulaşan</option>
+                    <option value="5" selected>5 Puana Ulaşan (Klasik Tavla)</option>
+                    <option value="7">7 Puana Ulaşan (Turnuva)</option>
+                </select>
+            </div>
+
+            <button id="btnStartGame" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px; font-size: 15px; margin-top: 8px;">
+                Oyuna Başla
+            </button>
+        </div>
+    </div>
+
+    <!-- Nasıl Oynanır / Kurallar Modalı -->
+    <div id="modalRules" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">
+                <span>📖 Tavla Kuralları ve Taktikleri</span>
+                <button class="modal-close" data-close-modal>&times;</button>
+            </div>
+
+            <div class="rules-text">
+                <h4>🎯 Oyunun Amacı</h4>
+                <p>15 adet pulunuzu rakibinizden önce kendi evinize toplayıp tahtadan tamamen çıkarmaktır.</p>
+
+                <h4>🔄 Hareket Yönleri</h4>
+                <ul>
+                    <li><strong>Beyaz Pullar:</strong> 24. noktadan 1. noktaya doğru saat yönünün tersine ilerler. Ev: 1 - 6 arasıdır.</li>
+                    <li><strong>Siyah Pullar:</strong> 1. noktadan 24. noktaya doğru saat yönünde ilerler. Ev: 19 - 24 arasıdır.</li>
+                </ul>
+
+                <h4>🛡 Kapı Alma & Taş Kırma</h4>
+                <ul>
+                    <li>Bir noktada kendi renginizden <strong>2 veya daha fazla</strong> pul varsa orası "Kapı"dır. Rakip o noktaya konamaz.</li>
+                    <li>Bir noktada rakibin sadece <strong>1 adet pulu</strong> varsa ("Açık"), o noktaya gelerek rakip pulu kırabilirsiniz.</li>
+                    <li>Kırılan pul "Bar"a (orta bölmeye) gider. Kırık pulu olan oyuncu, bu pulu rakip evinden oyuna sokmadan diğer taşlarını oynayamaz.</li>
+                </ul>
+
+                <h4>🎲 Çift Zarlar & Zorunlu Hamleler</h4>
+                <ul>
+                    <li>Zarlar aynı gelirse (örn: 4 - 4), o zar <strong>4 kez</strong> oynanır!</li>
+                    <li>Tavla kuralı gereği, mümkün olan en çok sayıda zar oynanmak zorundadır.</li>
+                </ul>
+
+                <h4>🏆 Puanlama (Mars & Katmerli Mars)</h4>
+                <ul>
+                    <li><strong>Normal Galibiyet (1 Puan):</strong> Rakip en az bir pul toplamışsa.</li>
+                    <li><strong>Mars (2 Puan):</strong> Rakip henüz hiç pul toplayamadan oyunu bitirirseniz.</li>
+                    <li><strong>Katmerli Mars (3 Puan):</strong> Rakip hiç pul toplayamamış ve hala sizin evinizde veya barda taşı kalmışsa.</li>
+                </ul>
+
+                <h4>🗣 Geleneksel Zar İsimleri</h4>
+                <p style="font-size: 12px; color: #dfa338;">
+                    1-1: Hep Yek • 2-2: Dü Bara • 3-3: Dü Se • 4-4: Dört Cihar • 5-5: Dü Beş • 6-6: Dü Şeş • 6-5: Şeş Beş • 5-3: Penc-ü Se
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zafer / Oyun Bitti Modalı -->
+    <div id="modalWin" class="modal-overlay">
+        <div class="modal-content win-content">
+            <div class="win-trophy">🏆</div>
+            <div id="winTitle" class="win-title">Tebrikler, Kazandınız!</div>
+            <div id="winSubtitle" class="win-subtitle">Normal Galibiyet: +1 Puan</div>
+            
+            <div style="margin: 18px 0; font-size: 18px; color: var(--gold-bright);">
+                Toplam Skor: <span id="winScoreSummary">1 - 0</span>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btnNextRound" class="btn btn-primary" style="padding: 10px 20px;">
+                    Sıradaki El
+                </button>
+                <button id="btnMatchNewGame" class="btn" style="padding: 10px 20px;">
+                    Yeni Maç
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Modülleri -->
+    <script src="js/audio.js"></script>
+    <script src="js/rules.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
